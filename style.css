@@ -1,5 +1,11 @@
 
-.plot{height: 100%; width: 100%;}
+.body{
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.plot{height: 100%; width: 75%;}
+
 .button{
     width: 100px;
     height: 50px;

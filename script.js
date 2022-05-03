@@ -3,20 +3,22 @@ let input = document.getElementById("input-point");
 let inputTime = document.getElementById("input-time");
 let addButton = document.getElementById("addpoint");
 let plan = document.getElementById("input-plan");
+let plotDiv = document.getElementById("plotDiv");
+
 let planValue;
 
 // Фактический график
 var trace1 = {
   x: [1649959200, 1649962800, 1649966400, 1649970000, 1650045600],
-  y: [1, 5, 3, 5, 10],
-  mode: "lines",
+  y: [1, 5, 3, 5, 7],
+  mode: "lines+markers",
   type: "scatter",
-  line: { color: "#ff0000" },
+  line: { color: "#FF00FF" },
   name: "Добыто фактически",
 };
 // Добыто за час
 var trace2 = {
-  x: [1649959200, 1650045600],
+  x: [1649962800, 1649966400],
   y: [4, 8],
   // mode: "",
   type: "bar",
@@ -33,7 +35,7 @@ var trace3 = {
 };
 // прогноз
 var trace4 = {
-  x: [1649959200, 1650045600],
+  x: [],
   y: [],
   mode: "lines",
   type: "scatter",
@@ -42,20 +44,25 @@ var trace4 = {
 };
 
 var data = [trace4, trace1, trace2, trace3];
+
 // Прогноз
-function forecast() {
-  trace4.x = trace1.x;
-  trace4.y = trace1.y;
+function forecast(data2) {
+  trace4.x = Array.from(trace1.x);
+  trace4.y = Array.from(trace1.y);
+
+ 
   let raznx = trace1.x[trace1.x.length - 1] - trace1.x[trace1.x.length - 2];
+
+  
   let razny = trace1.y[trace1.y.length - 1] - trace1.y[trace1.y.length - 2];
   for (i = 0; i < 4; i++) {
-    let nextX = raznx + trace1.x[trace1.x.length - 1];
+    let nextX = raznx +  trace1.x[trace1.x.length - 1];
     let nextY = razny + trace1.y[trace1.y.length - 1];
-    trace4.x.push(nextX);
+    trace4.x.push(convertFromUnixTime(nextX));
     sortArray(trace4.x);
     trace4.y.push(nextY);
   }
-  Plotly.update("plotDiv", data, layout);
+  Plotly.update("plotDiv", data2, layout);
 }
 
 // Функция устанавливает цвет графика прогноза придостижении или не достижении плана
@@ -68,34 +75,34 @@ if(trace4.y[trace4.y.length-1]>parseInt(planValue)){
 }
 
 //Функция перевода времени из юникс формата
-// function convertFromUnixTime(timestamp, utc = false) {
-//   if (!timestamp) return "";
-//   let time = "";
-//   if (!utc) {
-//     let dt = new Date(timestamp * 1000);
+function convertFromUnixTime(timestamp, utc = false) {
+  if (!timestamp) return "";
+  let time = "";
+  if (!utc) {
+    let dt = new Date(timestamp * 1000);
 
-//     year = dt.getFullYear();
-//     month = ("0" + (dt.getMonth() + 1)).slice(-2);
-//     day = ("0" + dt.getDate()).slice(-2);
-//     hours = ("0" + dt.getHours()).slice(-2);
-//     minutes = ("0" + dt.getMinutes()).slice(-2);
-//     seconds = ("0" + dt.getSeconds()).slice(-2);
-//     time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-//   } else {
-//     let dt = new Date(timestamp * 1000);
+    year = dt.getFullYear();
+    month = ("0" + (dt.getMonth() + 1)).slice(-2);
+    day = ("0" + dt.getDate()).slice(-2);
+    hours = ("0" + dt.getHours()).slice(-2);
+    minutes = ("0" + dt.getMinutes()).slice(-2);
+    seconds = ("0" + dt.getSeconds()).slice(-2);
+    time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  } else {
+    let dt = new Date(timestamp * 1000);
 
-//     year = dt.getUTCFullYear();
-//     month = ("0" + (dt.getUTCMonth() + 1)).slice(-2);
-//     day = ("0" + dt.getUTCDate()).slice(-2);
-//     hours = ("0" + dt.getUTCHours()).slice(-2);
-//     minutes = ("0" + dt.getUTCMinutes()).slice(-2);
-//     seconds = ("0" + dt.getUTCSeconds()).slice(-2);
+    year = dt.getUTCFullYear();
+    month = ("0" + (dt.getUTCMonth() + 1)).slice(-2);
+    day = ("0" + dt.getUTCDate()).slice(-2);
+    hours = ("0" + dt.getUTCHours()).slice(-2);
+    minutes = ("0" + dt.getUTCMinutes()).slice(-2);
+    seconds = ("0" + dt.getUTCSeconds()).slice(-2);
 
-//     time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-//   }
+    time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
 
-//   return time;
-// }
+  return time;
+}
 // Проверка отсортирован массив или нет
 function isSort(array) {
   for (let i = 1; i < array.length; i++) {
@@ -134,13 +141,45 @@ function addPoint(value, time) {
 
 // Функция отрисовки графика после добавлени точки
 function rendergraph(data, value = 1) {
+
+  let trace11={...trace1};
+  let trace22={...trace2};
+  let trace33={...trace3};
+  let trace44={...trace4};
+
+  var data1 = [trace44, trace11, trace22, trace33];
+ let trace1New=[];
+ let trace2New=[];
+ let trace3New=[];
+ let trace4New=[];
+  trace11.x.forEach(function(date){
+    let vol1=convertFromUnixTime(date);
+    trace1New.push(vol1);
+  })
+  trace22.x.forEach(function(date){
+    let vol2=convertFromUnixTime(date);
+    trace2New.push(vol2);
+  })
+  trace33.x.forEach(function(date){
+    let vol3=convertFromUnixTime(date);
+    trace3New.push(vol3);
+  })
+  trace44.x.forEach(function(date){
+    let vol4=convertFromUnixTime(date);
+    trace3New.push(vol4);
+  })
+    trace11.x=trace1New;
+    trace22.x=trace2New;
+    trace33.x=trace3New;
+    trace44.x=trace4New;
   if (value === 1) {
     Plotly.newPlot("plotDiv", data, layout,config);
-    forecast();
+    forecast(data);
   } else {
-    Plotly.update("plotDiv", data, layout,config);
-    forecast();
+    Plotly.update("plotDiv", data1, layout,config);
+    forecast(data1);
   }
+ 
 }
 
 // Функция устанавливающая план добычи
@@ -157,12 +196,17 @@ let config={
 }
 
 var layout = {
-  title: "Click Here<br>to Edit Chart Title",
+  title: "Скважина 1-1",
   xaxis: {
-    tickformat: "%d/%h/%m",
-    type: "date",
-    dtick: 86400000,
+    title: 'Дата',
+    autorange: true,
+    range: ['2022-04-15', '2022-04-16'],
+    type: 'date'
   },
+  yaxis: {autorange: true,
+    title: 'Добыто'},
+
+ 
 };
 rendergraph(data);
 
@@ -172,4 +216,23 @@ addButton.addEventListener("click", () => {
 
 button.addEventListener("click", () => {
   setPlan(plan.value);
+});
+
+// Функция клика на точки
+plotDiv.on('plotly_click', function(data){
+  var pts = '';
+  for(var i=0; i < data.points.length; i++){
+      annotate_text = 'Время = '+data.points[i].x +" "+
+                    ' Добыто '+data.points[i].y.toPrecision(4);
+
+      annotation = {
+        text: annotate_text,
+        x: data.points[i].x,
+        y: parseFloat(data.points[i].y.toPrecision(4))
+      }
+
+      annotations = self.layout.annotations || [];
+      annotations.push(annotation);
+      Plotly.relayout('plotDiv',{annotations: annotations})
+  }
 });
