@@ -5,8 +5,6 @@ let addButton = document.getElementById("addpoint");
 let plan = document.getElementById("input-plan");
 let plotDiv = document.getElementById("plotDiv");
 
-let planValue;
-
 // Фактический график
 var trace1 = {
   x: [1649959200, 1649962800, 1649966400, 1649970000, 1650045600],
@@ -39,7 +37,11 @@ var trace4 = {
   y: [],
   mode: "lines",
   type: "scatter",
-  line: { color: "#0f0", width: 3, dash: "dash" },
+  line: {
+    color: "#0f0",
+    width: 3,
+    dash: "dash",
+  },
   name: "Прогноз",
 };
 
@@ -48,32 +50,26 @@ var data = [trace4, trace1, trace2, trace3];
 // Прогноз
 function forecast(data) {
   let data2 = [...data];
-  // let trace= data2[0];
   data2[0].x = [...data2[1].x];
   data2[0].y = [...data2[1].y];
-
-  let raznx =
-    new Date(data2[1].x[data2[1].x.length - 1]).valueOf() -
-    new Date(data2[1].x[data2[1].x.length - 2]).valueOf();
-  // let raznx = data2[1].x[data2[1].x.length - 1] - data2[1].x[data2[1].x.length - 2];
-  let razny =
-    data2[1].y[data2[1].y.length - 1] - data2[1].y[data2[1].y.length - 2];
+  let elemIndex1 = new Date(data2[1].x[data2[1].x.length - 1]).valueOf();
+  let elemIndex2 = new Date(data2[1].x[data2[1].x.length - 2]).valueOf();
+  let differenceX = elemIndex1 - elemIndex2;
+  let differenceY = data2[1].y[data2[1].y.length - 1] - data2[1].y[data2[1].y.length - 2];
   for (i = 0; i < 4; i++) {
-    let nextX =
-      (raznx + new Date(data2[1].x[data2[1].x.length - 1]).valueOf()) / 1000;
-
-    let nextY = razny + data2[1].y[data2[1].y.length - 1];
+    let nextX = (differenceX + elemIndex1) /1000;
+    let nextY = differenceY + data2[1].y[data2[1].y.length - 1];
     data2[0].x.push(convertFromUnixTime(nextX));
     sortArray(data2[0].x);
     data2[0].y.push(nextY);
   }
-  trace4.y=[... data2[0].y];
+  trace4.y = [...data2[0].y];
   Plotly.update("plotDiv", data2, layout);
 }
 
 // Функция устанавливает цвет графика прогноза придостижении или не достижении плана
-function colorForecastGraph() {
-  if (trace4.y[trace4.y.length - 1] > parseInt(planValue)) {
+function colorForecastGraph(plan) {
+  if (trace4.y[trace4.y.length - 1] > parseInt(plan)) {
     trace4.line.color = "#0f0";
   } else {
     trace4.line.color = "#FF0000";
@@ -86,7 +82,6 @@ function convertFromUnixTime(timestamp, utc = false) {
   let time = "";
   if (!utc) {
     let dt = new Date(timestamp * 1000);
-
     year = dt.getFullYear();
     month = ("0" + (dt.getMonth() + 1)).slice(-2);
     day = ("0" + dt.getDate()).slice(-2);
@@ -96,19 +91,18 @@ function convertFromUnixTime(timestamp, utc = false) {
     time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   } else {
     let dt = new Date(timestamp * 1000);
-
     year = dt.getUTCFullYear();
     month = ("0" + (dt.getUTCMonth() + 1)).slice(-2);
     day = ("0" + dt.getUTCDate()).slice(-2);
     hours = ("0" + dt.getUTCHours()).slice(-2);
     minutes = ("0" + dt.getUTCMinutes()).slice(-2);
     seconds = ("0" + dt.getUTCSeconds()).slice(-2);
-
     time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
 
   return time;
 }
+
 // Проверка отсортирован массив или нет
 function isSort(array) {
   for (let i = 1; i < array.length; i++) {
@@ -157,6 +151,7 @@ function rendergraph(data, value = 1) {
   let trace2New = [];
   let trace3New = [];
   let trace4New = [];
+
   trace11.x.forEach(function (date) {
     let vol1 = convertFromUnixTime(date);
     trace1New.push(vol1);
@@ -177,6 +172,8 @@ function rendergraph(data, value = 1) {
   trace22.x = trace2New;
   trace33.x = trace3New;
   trace44.x = trace4New;
+
+  // Проверяем надо построить график или обновить
   if (value === 1) {
     Plotly.newPlot("plotDiv", data1, layout, config);
   } else {
@@ -187,11 +184,10 @@ function rendergraph(data, value = 1) {
 
 // Функция устанавливающая план добычи
 function setPlan(value) {
-  planValue = value;
   let num = parseInt(value);
   trace3.y.push(num);
   trace3.y.push(num);
-  colorForecastGraph();
+  colorForecastGraph(value);
   rendergraph(data, 2);
 }
 let config = {
@@ -222,19 +218,12 @@ button.addEventListener("click", () => {
 plotDiv.on("plotly_click", function (data) {
   var pts = "";
   for (var i = 0; i < data.points.length; i++) {
-    annotate_text =
-      "Время = " +
-      data.points[i].x +
-      " " +
-      " Добыто " +
-      data.points[i].y.toPrecision(4);
-
+    annotate_text ="Время = " + data.points[i].x + " " + " Добыто " + data.points[i].y.toPrecision(4);
     annotation = {
       text: annotate_text,
       x: data.points[i].x,
       y: parseFloat(data.points[i].y.toPrecision(4)),
     };
-
     annotations = self.layout.annotations || [];
     annotations.push(annotation);
     Plotly.relayout("plotDiv", { annotations: annotations });
